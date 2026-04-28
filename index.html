@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Over 1.5 Auto v4</title>
+<title>Over 1.5 Auto v5</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -515,7 +515,7 @@
     <div class="logo">O15</div>
     <div>
       <h1>OVER <span>1.5</span> AUTO</h1>
-      <div class="header-sub">V4 · Auto Fixture Analyzer + Bet Tracker</div>
+      <div class="header-sub">V5 · Auto Fixture Analyzer + Bet Tracker</div>
     </div>
   </div>
   <div class="header-date">
@@ -595,27 +595,27 @@
 const API_BASE = '/.netlify/functions/api';
 
 const LEAGUES = [
-  { code:'PL', name:'Premier League', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { code:'BL1', name:'Bundesliga', flag:'🇩🇪' },
-  { code:'SA', name:'Serie A', flag:'🇮🇹' },
-  { code:'PD', name:'La Liga', flag:'🇪🇸' },
-  { code:'FL1', name:'Ligue 1', flag:'🇫🇷' },
-  { code:'ELC', name:'Championship', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { code:'PPL', name:'Primeira Liga', flag:'🇵🇹' },
-  { code:'DED', name:'Eredivisie', flag:'🇳🇱' },
-  { code:'CL', name:'Champions Lg', flag:'🏆' },
+  { code:'PL',  name:'Premier League',  flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { code:'BL1', name:'Bundesliga',      flag:'🇩🇪' },
+  { code:'SA',  name:'Serie A',         flag:'🇮🇹' },
+  { code:'PD',  name:'La Liga',         flag:'🇪🇸' },
+  { code:'FL1', name:'Ligue 1',         flag:'🇫🇷' },
+  { code:'ELC', name:'Championship',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { code:'PPL', name:'Primeira Liga',   flag:'🇵🇹' },
+  { code:'DED', name:'Eredivisie',      flag:'🇳🇱' },
+  { code:'CL',  name:'Champions Lg',   flag:'🏆' },
 ];
 const LEAGUE_MAP = Object.fromEntries(LEAGUES.map(l => [l.code, l]));
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let allFixtures = []; // raw fixture objects from API
-let analysis = {}; // id → analysis data
-let openId = null; // which card is expanded
+let allFixtures = [];       // raw fixture objects from API
+let analysis = {};          // id → analysis data
+let openId = null;          // which card is expanded
 let activeLeague = 'ALL';
 let savedBets = JSON.parse(localStorage.getItem('o15v4_bets') || '[]');
 
 // Per-fixture UI state (odds, stake, oddsFormat)
-let uiState = {}; // id → { odds, stake, oddsFormat }
+let uiState = {};  // id → { odds, stake, oddsFormat }
 
 const today = new Date();
 document.getElementById('todayDate').textContent =
@@ -753,8 +753,12 @@ function buildCard(m) {
   const homeShort = m.homeTeam.shortName || m.homeTeam.name;
   const awayShort = m.awayTeam.shortName || m.awayTeam.name;
 
-  const homeGpgTxt = ad && ad.homeGPG != null ? `${ad.homeGPG.toFixed(2)} GPG` : '';
-  const awayGpgTxt = ad && ad.awayGPG != null ? `${ad.awayGPG.toFixed(2)} GPG` : '';
+  const homeGpgTxt = ad && ad.homeGPG != null
+    ? `${ad.homeGPG.toFixed(2)} GPG${ad.homeGPG_home != null ? ' · ' + ad.homeGPG_home.toFixed(2) + ' H' : ''}`
+    : '';
+  const awayGpgTxt = ad && ad.awayGPG != null
+    ? `${ad.awayGPG.toFixed(2)} GPG${ad.awayGPG_away != null ? ' · ' + ad.awayGPG_away.toFixed(2) + ' A' : ''}`
+    : '';
 
   let detail = '';
   if (isOpen) detail = buildDetail(id, m);
@@ -791,14 +795,17 @@ function buildDetail(id, m) {
   // Build checks
   const checks = buildChecks(ad, ui);
 
-  // Stats cells
+  // Stats cells — now 9 cells in a 3x3 grid
   const statCells = [
-    { lbl: 'Home GPG', val: ad.homeGPG != null ? ad.homeGPG.toFixed(2) : '?', cls: ad.homeGPG != null ? (ad.homeGPG >= 1.0 ? 'ok' : 'bad') : 'neutral' },
-    { lbl: 'Away GPG', val: ad.awayGPG != null ? ad.awayGPG.toFixed(2) : '?', cls: ad.awayGPG != null ? (ad.awayGPG >= 1.0 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Home GPG (overall)', val: ad.homeGPG != null ? ad.homeGPG.toFixed(2) : '?', cls: ad.homeGPG != null ? (ad.homeGPG >= 1.0 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Home GPG (at home)', val: ad.homeGPG_home != null ? ad.homeGPG_home.toFixed(2) : '?', cls: ad.homeGPG_home != null ? (ad.homeGPG_home >= 1.0 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Home Conceded/G', val: ad.homeConceded != null ? ad.homeConceded.toFixed(2) : '?', cls: ad.homeConceded != null ? (ad.homeConceded >= 0.8 ? 'ok' : 'neutral') : 'neutral' },
+    { lbl: 'Away GPG (overall)', val: ad.awayGPG != null ? ad.awayGPG.toFixed(2) : '?', cls: ad.awayGPG != null ? (ad.awayGPG >= 1.0 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Away GPG (away)', val: ad.awayGPG_away != null ? ad.awayGPG_away.toFixed(2) : '?', cls: ad.awayGPG_away != null ? (ad.awayGPG_away >= 1.0 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Away Conceded/G', val: ad.awayConceded != null ? ad.awayConceded.toFixed(2) : '?', cls: ad.awayConceded != null ? (ad.awayConceded >= 0.8 ? 'ok' : 'neutral') : 'neutral' },
+    { lbl: 'Home O1.5 Rate', val: ad.homeO15Rate != null ? ad.homeO15Rate + '%' : '?', cls: ad.homeO15Rate != null ? (ad.homeO15Rate >= 65 ? 'ok' : 'bad') : 'neutral' },
+    { lbl: 'Away O1.5 Rate', val: ad.awayO15Rate != null ? ad.awayO15Rate + '%' : '?', cls: ad.awayO15Rate != null ? (ad.awayO15Rate >= 65 ? 'ok' : 'bad') : 'neutral' },
     { lbl: 'H2H O1.5', val: ad.h2hRate != null ? ad.h2hRate + '%' : '?', cls: ad.h2hRate != null ? (ad.h2hRate >= 80 && ad.h2hRate <= 86 ? 'ok' : 'bad') : 'neutral' },
-    { lbl: 'Home Form', val: ad.homeForm != null ? ad.homeForm + '/5' : '?', cls: ad.homeForm != null ? (ad.homeForm >= 4 ? 'ok' : 'bad') : 'neutral' },
-    { lbl: 'Away Form', val: ad.awayForm != null ? ad.awayForm + '/5' : '?', cls: ad.awayForm != null ? (ad.awayForm >= 4 ? 'ok' : 'bad') : 'neutral' },
-    { lbl: 'Impl Prob', val: ad.impliedProb != null ? ad.impliedProb.toFixed(1) + '%' : '—', cls: ad.impliedProb != null ? (ad.impliedProb < 87 ? 'ok' : 'bad') : 'neutral' },
   ];
 
   const statsHtml = `<div class="stats-grid">
@@ -806,6 +813,20 @@ function buildDetail(id, m) {
       <div class="scell-lbl">${c.lbl}</div>
       <div class="scell-val ${c.cls}">${c.val}</div>
     </div>`).join('')}
+  </div>
+  <div class="stats-grid" style="margin-top:0">
+    <div class="scell">
+      <div class="scell-lbl">Home Form</div>
+      <div class="scell-val ${ad.homeForm != null ? (ad.homeForm >= 4 ? 'ok' : 'bad') : 'neutral'}">${ad.homeForm != null ? ad.homeForm + '/5' : '?'}</div>
+    </div>
+    <div class="scell">
+      <div class="scell-lbl">Away Form</div>
+      <div class="scell-val ${ad.awayForm != null ? (ad.awayForm >= 4 ? 'ok' : 'bad') : 'neutral'}">${ad.awayForm != null ? ad.awayForm + '/5' : '?'}</div>
+    </div>
+    <div class="scell">
+      <div class="scell-lbl">Impl Prob</div>
+      <div class="scell-val ${ad.impliedProb != null ? (ad.impliedProb < 87 ? 'ok' : 'bad') : 'neutral'}">${ad.impliedProb != null ? ad.impliedProb.toFixed(1) + '%' : '—'}</div>
+    </div>
   </div>`;
 
   // Criteria chips
@@ -882,7 +903,11 @@ function buildChecks(ad, ui) {
   const imp = calcImplied(ui.odds, ui.oddsFormat);
   return [
     { label: 'Home GPG ≥ 1.0', pass: ad.homeGPG != null ? ad.homeGPG >= 1.0 : null },
+    { label: 'Home GPG (home) ≥ 1.0', pass: ad.homeGPG_home != null ? ad.homeGPG_home >= 1.0 : null },
     { label: 'Away GPG ≥ 1.0', pass: ad.awayGPG != null ? ad.awayGPG >= 1.0 : null },
+    { label: 'Away GPG (away) ≥ 1.0', pass: ad.awayGPG_away != null ? ad.awayGPG_away >= 1.0 : null },
+    { label: 'Home O1.5 ≥ 65%', pass: ad.homeO15Rate != null ? ad.homeO15Rate >= 65 : null },
+    { label: 'Away O1.5 ≥ 65%', pass: ad.awayO15Rate != null ? ad.awayO15Rate >= 65 : null },
     { label: 'H2H O1.5 80–86%', pass: ad.h2hRate != null ? (ad.h2hRate >= 80 && ad.h2hRate <= 86) : null },
     { label: 'Home scored 4/5', pass: ad.homeForm != null ? ad.homeForm >= 4 : null },
     { label: 'Away scored 4/5', pass: ad.awayForm != null ? ad.awayForm >= 4 : null },
@@ -921,18 +946,34 @@ async function autoAnalyse(id) {
 
   try {
     const [homeRes, awayRes, h2hRes] = await Promise.all([
-      fetch(`${API_BASE}?path=/teams/${homeId}/matches&status=FINISHED&limit=10`).then(r => r.json()),
-      fetch(`${API_BASE}?path=/teams/${awayId}/matches&status=FINISHED&limit=10`).then(r => r.json()),
-      fetch(`${API_BASE}?path=/teams/${homeId}/matches?status=FINISHED&limit=50`).then(r => r.json()),
+      fetch(`${API_BASE}?path=/teams/${homeId}/matches&status=FINISHED&limit=20`).then(r => r.json()),
+      fetch(`${API_BASE}?path=/teams/${awayId}/matches&status=FINISHED&limit=20`).then(r => r.json()),
+      fetch(`${API_BASE}?path=/teams/${homeId}/matches&status=FINISHED&limit=50`).then(r => r.json()),
     ]);
 
     const homeMatches = homeRes.matches || [];
     const awayMatches = awayRes.matches || [];
     const allHomeMatches = h2hRes.matches || [];
 
-    // GPG (last 10)
-    const homeGPG = calcGPG(homeMatches, homeId);
-    const awayGPG = calcGPG(awayMatches, awayId);
+    // Split home/away matches for each team
+    const homePlayedAtHome = homeMatches.filter(hm => hm.homeTeam?.id === homeId);
+    const awayPlayedAway   = awayMatches.filter(hm => hm.awayTeam?.id === awayId);
+
+    // GPG overall (last 10)
+    const homeGPG = calcGPG(homeMatches.slice(0,10), homeId);
+    const awayGPG = calcGPG(awayMatches.slice(0,10), awayId);
+
+    // GPG home/away split
+    const homeGPG_home = calcGPG(homePlayedAtHome.slice(0,8), homeId);
+    const awayGPG_away = calcGPG(awayPlayedAway.slice(0,8), awayId);
+
+    // Goals conceded per game
+    const homeConceded = calcConceded(homeMatches.slice(0,10), homeId);
+    const awayConceded = calcConceded(awayMatches.slice(0,10), awayId);
+
+    // Over 1.5 rate for each team individually (last 10)
+    const homeO15Rate = calcTeamO15Rate(homeMatches.slice(0,10));
+    const awayO15Rate = calcTeamO15Rate(awayMatches.slice(0,10));
 
     // Form — scored in last 5
     const homeForm = calcForm(homeMatches, homeId);
@@ -949,6 +990,9 @@ async function autoAnalyse(id) {
     analysis[id] = {
       loading: false,
       homeGPG, awayGPG,
+      homeGPG_home, awayGPG_away,
+      homeConceded, awayConceded,
+      homeO15Rate, awayO15Rate,
       homeForm, awayForm,
       h2hRate, h2hMatches,
       impliedProb: null,
@@ -989,6 +1033,23 @@ function calcForm(matches, teamId) {
   }).length;
 }
 
+function calcConceded(matches, teamId) {
+  if (!matches?.length) return null;
+  const total = matches.reduce((s, m) => {
+    const isHome = m.homeTeam?.id === teamId;
+    return s + ((isHome ? m.score?.fullTime?.away : m.score?.fullTime?.home) || 0);
+  }, 0);
+  return total / matches.length;
+}
+
+function calcTeamO15Rate(matches) {
+  if (!matches?.length) return null;
+  const over = matches.filter(m =>
+    ((m.score?.fullTime?.home || 0) + (m.score?.fullTime?.away || 0)) >= 2
+  ).length;
+  return Math.round((over / matches.length) * 100);
+}
+
 function calcH2HRate(matches) {
   if (!matches?.length || matches.length < 3) return null;
   const over = matches.filter(m =>
@@ -1025,13 +1086,17 @@ function calcVerdict(id) {
   if (!dataReady) { ad.verdict = null; return; }
 
   const c1 = ad.homeGPG >= 1.0;
-  const c2 = ad.awayGPG >= 1.0;
-  const c3 = ad.h2hRate != null ? (ad.h2hRate >= 80 && ad.h2hRate <= 86) : false;
-  const c4 = ad.homeForm >= 4;
-  const c5 = ad.awayForm >= 4;
-  const c6 = imp != null ? imp < 87 : true; // if no odds entered, don't penalise
+  const c2 = ad.homeGPG_home != null ? ad.homeGPG_home >= 1.0 : true; // informational, don't hard fail if no data
+  const c3 = ad.awayGPG >= 1.0;
+  const c4 = ad.awayGPG_away != null ? ad.awayGPG_away >= 1.0 : true;
+  const c5 = ad.h2hRate != null ? (ad.h2hRate >= 80 && ad.h2hRate <= 86) : false;
+  const c6 = ad.homeForm >= 4;
+  const c7 = ad.awayForm >= 4;
+  const c8 = ad.homeO15Rate != null ? ad.homeO15Rate >= 65 : true;
+  const c9 = ad.awayO15Rate != null ? ad.awayO15Rate >= 65 : true;
+  const c10 = imp != null ? imp < 87 : true;
 
-  ad.verdict = (c1 && c2 && c3 && c4 && c5 && c6) ? 'BET' : 'SKIP';
+  ad.verdict = (c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10) ? 'BET' : 'SKIP';
 }
 
 function recheckOdds(id) {
