@@ -10,7 +10,7 @@ const CONFIG = {
   ODDS_API_BASE: 'https://api.the-odds-api.com/v4',
 
   // Paddy Power bookmaker key on The Odds API
-  BOOKMAKER: 'bet365',
+  BOOKMAKER: '',
 
   // Over/Under market key
   MARKET: 'totals',
