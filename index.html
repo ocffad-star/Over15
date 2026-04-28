@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Over 1.5 Auto v5</title>
+<title>Over 1.5 Auto v6</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -379,8 +379,34 @@
   .save-btn:hover { background: rgba(63,185,80,0.22); }
   .save-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* Error */
-  .err-msg {
+  .team-crest {
+    width: 28px; height: 28px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 4px;
+    opacity: 0.92;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+  }
+  .team-crest-lg {
+    width: 40px; height: 40px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.95;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+  }
+  .team-home { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+  .team-away { text-align: left; display: flex; flex-direction: column; align-items: flex-start; }
+
+  /* Detail header with crests */
+  .detail-teams {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 10px;
+  }
+  .detail-team-block {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .detail-team-block.right { flex-direction: row-reverse; }
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.68rem; color: var(--red); padding: 12px 0;
   }
@@ -515,7 +541,7 @@
     <div class="logo">O15</div>
     <div>
       <h1>OVER <span>1.5</span> AUTO</h1>
-      <div class="header-sub">V5 · Auto Fixture Analyzer + Bet Tracker</div>
+      <div class="header-sub">V6 · Auto Fixture Analyzer + Bet Tracker</div>
     </div>
   </div>
   <div class="header-date">
@@ -760,6 +786,9 @@ function buildCard(m) {
     ? `${ad.awayGPG.toFixed(2)} GPG${ad.awayGPG_away != null ? ' · ' + ad.awayGPG_away.toFixed(2) + ' A' : ''}`
     : '';
 
+  const homeCrest = m.homeTeam.crest || '';
+  const awayCrest = m.awayTeam.crest || '';
+
   let detail = '';
   if (isOpen) detail = buildDetail(id, m);
 
@@ -767,6 +796,7 @@ function buildCard(m) {
   <div class="${cardCls}" id="mcard-${id}">
     <div class="mcard-top" onclick="toggleCard(${id})">
       <div class="team-home">
+        ${homeCrest ? `<img class="team-crest" src="${homeCrest}" alt="" onerror="this.style.display='none'">` : ''}
         <div class="team-name">${homeShort}</div>
         ${homeGpgTxt ? `<div class="team-gpg">${homeGpgTxt}</div>` : ''}
       </div>
@@ -775,6 +805,7 @@ function buildCard(m) {
         <span class="vs-sep">VS</span>
       </div>
       <div class="team-away">
+        ${awayCrest ? `<img class="team-crest" src="${awayCrest}" alt="" onerror="this.style.display='none'">` : ''}
         <div class="team-name">${awayShort}</div>
         ${awayGpgTxt ? `<div class="team-gpg">${awayGpgTxt}</div>` : ''}
       </div>
@@ -862,9 +893,28 @@ function buildDetail(id, m) {
   // Save button — only show if BET verdict
   const canSave = ad.verdict === 'BET';
 
+  const homeCrest = m.homeTeam.crest || '';
+  const awayCrest = m.awayTeam.crest || '';
+
   return `<div class="mcard-detail">
     <div class="detail-hdr">
-      <span class="detail-hdr-label">${(m.homeTeam.shortName || m.homeTeam.name).toUpperCase()} vs ${(m.awayTeam.shortName || m.awayTeam.name).toUpperCase()}</span>
+      <div class="detail-teams" style="flex:1">
+        <div class="detail-team-block">
+          ${homeCrest ? `<img class="team-crest-lg" src="${homeCrest}" alt="" onerror="this.style.display='none'">` : ''}
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.04em;">${m.homeTeam.shortName || m.homeTeam.name}</div>
+            <div class="detail-hdr-label">HOME</div>
+          </div>
+        </div>
+        <div class="detail-hdr-label" style="padding:0 8px;">VS</div>
+        <div class="detail-team-block right">
+          ${awayCrest ? `<img class="team-crest-lg" src="${awayCrest}" alt="" onerror="this.style.display='none'">` : ''}
+          <div style="text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.04em;">${m.awayTeam.shortName || m.awayTeam.name}</div>
+            <div class="detail-hdr-label">AWAY</div>
+          </div>
+        </div>
+      </div>
       <button class="refetch-btn" onclick="event.stopPropagation();reAnalyse(${id})" ${ad.loading ? 'disabled' : ''}>↻ Re-fetch</button>
     </div>
     ${statsHtml}
