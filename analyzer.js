@@ -80,7 +80,6 @@ async function fetchAllOdds() {
       url.searchParams.set('apiKey', CONFIG.ODDS_API_KEY);
       url.searchParams.set('regions', 'uk');
       url.searchParams.set('markets', CONFIG.MARKET);
-      url.searchParams.set('bookmakers', CONFIG.BOOKMAKER);
       url.searchParams.set('commenceTimeFrom', fromISO);
       url.searchParams.set('commenceTimeTo', toISO);
       url.searchParams.set('oddsFormat', 'decimal');
