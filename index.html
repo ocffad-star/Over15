@@ -324,7 +324,7 @@ async function loadFixtures() {
 
   try {
     await loadStandings(activeLeague);
-    const data = await api(`/v4/competitions/${activeLeague}/matches?dateFrom=${t}&dateTo=${tomorrow}&status=SCHEDULED`);
+    const data = await api(`/v4/competitions/${activeLeague}/matches?dateFrom=${t}&dateTo=${tomorrow}&status=SCHEDULED%2CTIMED`);
     fixtures = data.matches || [];
     status.textContent = fixtures.length > 0 ? `${fixtures.length} match${fixtures.length!==1?'es':''} found` : 'No matches today';
     renderFixtures();
