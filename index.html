@@ -69,6 +69,15 @@
   .source-pill.fdorg { background: rgba(88,166,255,0.1); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
   .source-pill.mixed { background: rgba(210,153,34,0.1); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
 
+  /* Request counter */
+  .req-counter {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem; color: var(--muted);
+    margin-top: 3px;
+  }
+  .req-counter.warn { color: var(--amber); }
+  .req-counter.danger { color: var(--red); }
+
   /* Tabs */
   .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); max-width: 1100px; margin: 0 auto; padding: 0 20px; }
   .tab-btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px 18px; background: none; border: none; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; display: flex; align-items: center; gap: 7px; }
@@ -287,6 +296,7 @@
   <div class="header-date">
     <strong id="todayDate">—</strong>
     <span id="sourceIndicator"></span>
+    <div class="req-counter" id="reqCounter"></div>
   </div>
 </header>
 
@@ -380,7 +390,26 @@ let savedBets = JSON.parse(localStorage.getItem('o15v7_bets') || '[]');
 let uiState = {};
 let showBetsOnly = false;
 let scanAborted = false;
-let dataSource = null; // 'apif', 'fdorg', 'mixed'
+let dataSource = null;
+
+// ── REQUEST COUNTER ───────────────────────────────────────────────────────────
+let apifReqCount = 0;
+const APIF_DAILY_LIMIT = 100;
+
+function trackRequest(source) {
+  if (source === 'apif') {
+    apifReqCount++;
+    updateReqCounter();
+  }
+}
+
+function updateReqCounter() {
+  const el = document.getElementById('reqCounter');
+  if (apifReqCount === 0) { el.textContent = ''; return; }
+  const remaining = APIF_DAILY_LIMIT - apifReqCount;
+  el.textContent = `API-F: ${apifReqCount} used · ${remaining} left`;
+  el.className = 'req-counter' + (remaining < 20 ? ' danger' : remaining < 40 ? ' warn' : '');
+}
 
 const today = new Date();
 document.getElementById('todayDate').textContent =
@@ -426,6 +455,7 @@ function setLeague(code) {
 
 // ── API CALLS WITH FALLBACK ───────────────────────────────────────────────────
 async function apifCall(params) {
+  trackRequest('apif');
   const qs = new URLSearchParams({ source:'apif', ...params }).toString();
   const res = await fetch(`${API_BASE}?${qs}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -463,10 +493,10 @@ async function loadFixtures() {
     const lg = toFetch[i];
     setStatus(`Fetching ${lg.name}… (${i+1}/${toFetch.length})`, 'loading');
 
-    // Try API-Football first
+    // Try API-Football first — pass numeric apifId directly
     let fetched = false;
     try {
-      const data = await apifCall({ action:'fixtures', league: lg.code });
+      const data = await apifCall({ action:'fixtures', league: lg.apifId });
       const matches = data.response || [];
       if (matches.length > 0) {
         allFixtures.push(...matches.map(m => ({
@@ -492,7 +522,7 @@ async function loadFixtures() {
         fetched = true;
       }
     } catch(e) {
-      console.warn(`API-Football failed for ${lg.code}:`, e.message);
+      console.warn(`API-Football failed for ${lg.code} (id:${lg.apifId}):`, e.message);
     }
 
     // Fallback to football-data.org
@@ -530,6 +560,14 @@ async function autoScan() {
   const unanalysed = fixtures.filter(f => !analysis[f.id] || analysis[f.id].error);
   if (unanalysed.length === 0) { showToast('All fixtures already analysed'); return; }
 
+  // Warn if quota is getting tight
+  const projectedRequests = unanalysed.length * 3; // ~3 calls per fixture (home stats, away stats, h2h)
+  const remaining = APIF_DAILY_LIMIT - apifReqCount;
+  if (projectedRequests > remaining) {
+    const proceed = confirm(`⚠ This scan may use ~${projectedRequests} API requests but only ~${remaining} remain today. Continue?`);
+    if (!proceed) return;
+  }
+
   scanAborted = false;
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.textContent = '⛔ STOP SCAN';
@@ -550,7 +588,6 @@ async function autoScan() {
     await analyseFixture(fixture.id);
     done++;
 
-    // Small delay to avoid hammering API
     await new Promise(r => setTimeout(r, 400));
   }
 
@@ -564,7 +601,6 @@ async function autoScan() {
   const bets = Object.values(analysis).filter(a => a.verdict === 'BET').length;
   setStatus(`Scan complete — ${bets} BET${bets!==1?'s':''} found`, 'ok');
 
-  // Auto-switch to BETs only if any found
   if (bets > 0 && !showBetsOnly) {
     showBetsOnly = true;
     updateFilterToggle();
@@ -585,7 +621,6 @@ async function analyseFixture(id) {
   const homeId = m.homeTeam.id;
   const awayId = m.awayTeam.id;
   const leagueId = m.leagueId || null;
-  const season = getCurrentSeason();
 
   try {
     let homeGPG, awayGPG, homeGPG_home, awayGPG_away;
@@ -594,14 +629,12 @@ async function analyseFixture(id) {
     let usedSource = m.source;
 
     if (m.source === 'apif' && leagueId) {
-      // Use API-Football endpoints
       const [homeStats, awayStats, h2hData] = await Promise.allSettled([
         apifCall({ action:'team_stats', teamId:homeId, leagueId }),
         apifCall({ action:'team_stats', teamId:awayId, leagueId }),
         apifCall({ action:'h2h', h2h:`${homeId}-${awayId}` }),
       ]);
 
-      // Parse team stats
       if (homeStats.status === 'fulfilled') {
         const hs = homeStats.value.response;
         homeGPG = parseFloat(hs?.goals?.for?.average?.total) || null;
@@ -610,10 +643,9 @@ async function analyseFixture(id) {
         const played = hs?.fixtures?.played?.total || 0;
         const scored = hs?.goals?.for?.total?.total || 0;
         homeO15Rate = played > 0 ? Math.round((scored / played) * 100) : null;
-        // Form from last 5
         const formStr = hs?.form || '';
         const last5 = formStr.slice(-5);
-        homeForm = last5.split('').filter(c => c !== 'L').length; // W or D counts as scored approximation
+        homeForm = last5.split('').filter(c => c !== 'L').length;
       }
 
       if (awayStats.status === 'fulfilled') {
@@ -640,14 +672,14 @@ async function analyseFixture(id) {
         h2hRate = calcH2HRate(h2hMatches);
       }
 
-      // Fallback to fdorg for form if API-F stats incomplete
+      // If core stats missing, fall back to fdorg
       if (homeGPG == null || awayGPG == null) {
+        console.warn(`API-Football stats incomplete for fixture ${id}, falling back to FDOrg`);
         await enrichFromFDOrg(id, m, homeId, awayId);
         return;
       }
 
     } else {
-      // Use football-data.org
       await enrichFromFDOrg(id, m, homeId, awayId);
       return;
     }
@@ -665,12 +697,11 @@ async function analyseFixture(id) {
     };
 
   } catch(e) {
-    // Full fallback to fdorg
     try {
       await enrichFromFDOrg(id, m, homeId, awayId);
       return;
     } catch(e2) {
-      analysis[id] = { loading: false, error: e2.message };
+      analysis[id] = { loading: false, error: `Stats unavailable (${e2.message})` };
     }
   }
 
@@ -679,7 +710,6 @@ async function analyseFixture(id) {
 }
 
 async function enrichFromFDOrg(id, m, homeId, awayId) {
-  const todayStr = today.toISOString().split('T')[0];
   const [homeRes, awayRes, h2hRes] = await Promise.all([
     fdorgCall(`/teams/${homeId}/matches?status=FINISHED&limit=20`),
     fdorgCall(`/teams/${awayId}/matches?status=FINISHED&limit=20`),
@@ -869,7 +899,6 @@ function buildDetail(id, m) {
   const payStr = calcPayout(ui.stake, ui.odds, ui.oddsFormat);
   const payNote = payStr ? `→ €${payStr} projected return` : '';
   const canSave = ad.verdict === 'BET';
-  const oddsId = `odds-${id}`;
 
   return `<div class="mcard-detail">
     <div class="detail-hdr">
