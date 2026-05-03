@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Over 1.5 Auto v7</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --card: #161b22;
+    --border: #21262d;
+    --border2: #2d333b;
+    --green: #3fb950;
+    --red: #f85149;
+    --amber: #d29922;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --muted: #484f58;
+    --text: #e6edf3;
+    --subtext: #8b949e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 38px; height: 38px;
+    background: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px; color: #000; letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem,4vw,2rem); letter-spacing: 0.06em; line-height: 1; }
+  header h1 span { color: var(--green); }
+  .header-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  .header-date { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--subtext); text-align: right; }
+  .header-date strong { color: var(--green); display: block; font-size: 0.78rem; }
+
+  /* Source indicator */
+  .source-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 10px;
+    display: inline-block; margin-left: 6px;
+  }
+  .source-pill.apif { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .source-pill.fdorg { background: rgba(88,166,255,0.1); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+  .source-pill.mixed { background: rgba(210,153,34,0.1); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+
+  /* Tabs */
+  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .tab-btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px 18px; background: none; border: none; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; display: flex; align-items: center; gap: 7px; }
+  .tab-btn:hover:not(.active) { color: var(--subtext); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--green); }
+  .tab-badge { background: var(--green); color: #000; font-size: 0.58rem; font-weight: 600; padding: 1px 5px; border-radius: 10px; min-width: 16px; text-align: center; display: none; }
+  .tab-badge.show { display: inline-block; }
+
+  .tab-pane { display: none; max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .tab-pane.active { display: block; }
+
+  /* League bar */
+  .league-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
+  .league-chip { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; padding: 5px 11px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--subtext); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .league-chip:hover { border-color: var(--border2); color: var(--text); }
+  .league-chip.active { background: rgba(63,185,80,0.12); border-color: var(--green); color: var(--green); }
+
+  /* Load bar */
+  .load-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .load-btn { padding: 9px 22px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(63,185,80,0.12); border: 1px solid var(--green); color: var(--green); border-radius: 5px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .load-btn:hover { background: rgba(63,185,80,0.22); }
+  .load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .scan-btn { padding: 9px 22px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(88,166,255,0.1); border: 1px solid var(--blue); color: var(--blue); border-radius: 5px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .scan-btn:hover { background: rgba(88,166,255,0.2); }
+  .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status-pill { font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; color: var(--subtext); }
+  .status-pill.loading { color: var(--amber); animation: blink 1s infinite; }
+  .status-pill.error { color: var(--red); }
+  .status-pill.ok { color: var(--green); }
+  @keyframes blink { 50% { opacity: 0.35; } }
+
+  /* Auto-scan progress */
+  .scan-progress {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .scan-progress.show { display: block; }
+  .scan-progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .scan-progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .scan-progress-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--subtext); display: flex; justify-content: space-between; }
+
+  /* Filter toggle */
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .filter-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; padding: 4px 12px; border-radius: 20px; cursor: pointer; transition: all 0.15s; }
+  .filter-toggle.all { background: var(--surface); border: 1px solid var(--border); color: var(--subtext); }
+  .filter-toggle.bets-only { background: rgba(63,185,80,0.12); border: 1px solid var(--green); color: var(--green); }
+  .filter-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); }
+
+  /* Summary strip */
+  .summary-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+  .sum-cell { background: var(--card); padding: 11px 14px; text-align: center; }
+  .sum-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; line-height: 1; display: block; }
+  .sum-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; display: block; }
+
+  /* Match list */
+  .league-section-hdr { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 0 5px; border-top: 1px solid var(--border); margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+  .league-section-hdr:first-child { margin-top: 0; border-top: none; }
+  .lhdr-count { background: var(--border2); color: var(--subtext); font-size: 0.58rem; padding: 1px 6px; border-radius: 3px; }
+
+  .match-list { display: flex; flex-direction: column; gap: 3px; }
+
+  .mcard { background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; transition: border-color 0.15s; position: relative; }
+  .mcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--border2); transition: background 0.15s; border-radius: 6px 0 0 6px; }
+  .mcard:hover::before { background: var(--blue); }
+  .mcard.open { border-color: var(--border2); }
+  .mcard.open::before { background: var(--blue); }
+  .mcard.vbet { border-color: rgba(63,185,80,0.4); }
+  .mcard.vbet::before { background: var(--green); }
+  .mcard.vskip::before { background: var(--red); }
+
+  .mcard-top { padding: 11px 14px 11px 18px; display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 10px; align-items: center; }
+  .team-home { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+  .team-away { text-align: left; display: flex; flex-direction: column; align-items: flex-start; }
+  .team-crest { width: 28px; height: 28px; object-fit: contain; display: block; margin-bottom: 4px; opacity: 0.92; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
+  .team-crest-lg { width: 40px; height: 40px; object-fit: contain; display: block; margin-bottom: 6px; opacity: 0.95; }
+  .team-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.04em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+  .team-gpg { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--subtext); margin-top: 2px; }
+  .vs-block { text-align: center; flex-shrink: 0; }
+  .vs-time { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--text); display: block; font-weight: 600; }
+  .vs-sep { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--muted); display: block; letter-spacing: 0.1em; }
+  .verdict-wrap { width: 80px; text-align: center; flex-shrink: 0; }
+  .vbadge { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; padding: 4px 9px; border-radius: 4px; text-transform: uppercase; display: inline-block; }
+  .vbadge.bet { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
+  .vbadge.skip { background: rgba(248,81,73,0.1); color: var(--red); border: 1px solid var(--red); }
+  .vbadge.loading { background: rgba(88,166,255,0.1); color: var(--blue); border: 1px solid var(--blue); animation: blink 1s infinite; font-size: 0.6rem; }
+  .vbadge.pending { background: rgba(72,79,88,0.15); color: var(--muted); border: 1px solid var(--muted); font-size: 0.6rem; }
+
+  /* Detail panel */
+  .mcard-detail { border-top: 1px solid var(--border); padding: 14px 18px; animation: slideIn 0.18s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+  .detail-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .detail-teams { display: flex; align-items: center; justify-content: space-between; flex: 1; gap: 10px; }
+  .detail-team-block { display: flex; align-items: center; gap: 8px; }
+  .detail-team-block.right { flex-direction: row-reverse; }
+  .detail-hdr-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .refetch-btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.07em; text-transform: uppercase; background: none; border: 1px solid var(--border2); color: var(--subtext); padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+  .refetch-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .refetch-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 7px; }
+  @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+  .scell { background: var(--surface); border-radius: 5px; padding: 8px 10px; }
+  .scell-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--subtext); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; }
+  .scell-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 600; }
+  .scell-val.ok { color: var(--green); }
+  .scell-val.bad { color: var(--red); }
+  .scell-val.neutral { color: var(--subtext); }
+
+  /* Criteria chips */
+  .crits-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .crit-chip { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.05em; padding: 3px 9px; border-radius: 12px; }
+  .crit-chip.pass { background: rgba(63,185,80,0.1); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .crit-chip.fail { background: rgba(248,81,73,0.1); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .crit-chip.wait { background: rgba(72,79,88,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+  /* H2H */
+  .h2h-section { margin-bottom: 12px; }
+  .h2h-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--subtext); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 5px; }
+  .h2h-row { display: grid; grid-template-columns: 80px 1fr 60px 30px; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--subtext); padding: 3px 0; border-bottom: 1px solid rgba(33,38,45,0.6); gap: 8px; align-items: center; }
+  .h2h-score { color: var(--text); font-weight: 600; text-align: right; }
+  .h2h-o { color: var(--green); font-weight: 600; text-align: right; }
+  .h2h-u { color: var(--muted); text-align: right; }
+
+  /* Odds/stake */
+  .bottom-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+  @media (max-width:520px) { .bottom-row { grid-template-columns: 1fr 1fr; } .bottom-row .save-col { grid-column: 1/-1; } }
+  .inp-group { display: flex; flex-direction: column; gap: 3px; }
+  .inp-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--subtext); letter-spacing: 0.07em; text-transform: uppercase; }
+  .inp-field { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; padding: 7px 9px; outline: none; width: 100%; transition: border-color 0.15s; }
+  .inp-field:focus { border-color: var(--blue); }
+  .payout-note { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--green); margin-bottom: 10px; min-height: 16px; }
+  .save-btn { padding: 8px 16px; width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(63,185,80,0.1); border: 1px solid var(--green); color: var(--green); border-radius: 5px; cursor: pointer; transition: background 0.15s; }
+  .save-btn:hover { background: rgba(63,185,80,0.22); }
+  .save-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Spinner / error */
+  .spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .err-msg { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--red); padding: 12px 0; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 50px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; line-height: 2; }
+  .empty-big { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: var(--border2); display: block; line-height: 1; margin-bottom: 6px; }
+
+  /* Tracker */
+  .tracker-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width:560px) { .tracker-stats { grid-template-columns: repeat(2,1fr); } }
+  .stat-tile { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-tile .big { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1; }
+  .stat-tile .small { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--subtext); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .col-green { color: var(--green); }
+  .col-red { color: var(--red); }
+  .col-amber { color: var(--amber); }
+  .col-blue { color: var(--blue); }
+  .col-purple { color: var(--purple); }
+
+  .pl-bar { height: 4px; background: var(--surface); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+  .pl-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .pl-fill.pos { background: var(--green); }
+  .pl-fill.neg { background: var(--red); }
+
+  .saved-list { display: flex; flex-direction: column; gap: 8px; }
+  .sbet { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .sbet.won { border-left: 3px solid var(--green); }
+  .sbet.lost { border-left: 3px solid var(--red); }
+  .sbet.void { border-left: 3px solid var(--muted); }
+  .sbet.pending-result { border-left: 3px solid var(--amber); }
+  .sbet-teams { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.04em; }
+  .sbet-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--subtext); margin-top: 3px; }
+  .sbet-pl { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; margin-top: 3px; }
+  .sbet-pl.won { color: var(--green); }
+  .sbet-pl.lost { color: var(--red); }
+
+  .res-btns { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .rb { padding: 4px 9px; font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+  .rb.win { background: rgba(63,185,80,0.1); border: 1px solid var(--green); color: var(--green); }
+  .rb.win:hover { background: rgba(63,185,80,0.22); }
+  .rb.lose { background: rgba(248,81,73,0.08); border: 1px solid var(--red); color: var(--red); }
+  .rb.lose:hover { background: rgba(248,81,73,0.18); }
+  .rb.vd { background: rgba(72,79,88,0.1); border: 1px solid var(--muted); color: var(--muted); }
+  .rb.del { background: none; border: 1px solid var(--border); color: var(--muted); }
+  .rb.del:hover { border-color: var(--red); color: var(--red); }
+
+  .tracker-empty { text-align: center; padding: 40px 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; line-height: 1.9; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--green); color: #000; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.07em; padding: 9px 20px; border-radius: 5px; transition: transform 0.25s; z-index: 999; pointer-events: none; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width:500px) {
+    .mcard-top { grid-template-columns: 1fr auto 1fr auto; gap: 6px; padding: 10px 10px 10px 14px; }
+    .team-name { font-size: 0.88rem; max-width: 110px; }
+    .summary-strip { grid-template-columns: repeat(2,1fr); }
+    .tab-pane { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">O15</div>
+    <div>
+      <h1>OVER <span>1.5</span> AUTO</h1>
+      <div class="header-sub">V7 · Dual Source · Auto-Scan</div>
+    </div>
+  </div>
+  <div class="header-date">
+    <strong id="todayDate">—</strong>
+    <span id="sourceIndicator"></span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('analyzer')">⚽ Analyzer</button>
+  <button class="tab-btn" onclick="switchTab('tracker')">📊 Results <span class="tab-badge" id="trackerBadge">0</span></button>
+</div>
+
+<!-- ANALYZER TAB -->
+<div class="tab-pane active" id="tab-analyzer">
+
+  <div class="league-bar" id="leagueBar"></div>
+
+  <div class="load-bar">
+    <button class="load-btn" id="loadBtn" onclick="loadFixtures()">LOAD FIXTURES</button>
+    <button class="scan-btn" id="scanBtn" onclick="autoScan()" disabled>⚡ AUTO-SCAN</button>
+    <span class="status-pill" id="statusPill">Pick a league or load all</span>
+  </div>
+
+  <div class="scan-progress" id="scanProgress">
+    <div class="scan-progress-label">
+      <span id="scanLabel">Scanning…</span>
+      <span id="scanCount">0 / 0</span>
+    </div>
+    <div class="scan-progress-bar">
+      <div class="scan-progress-fill" id="scanFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-lbl">Show:</span>
+    <span class="filter-toggle all" id="filterToggle" onclick="toggleFilter()">All Fixtures</span>
+  </div>
+
+  <div class="summary-strip">
+    <div class="sum-cell"><span class="sum-val" id="sTotal" style="color:var(--blue)">—</span><span class="sum-lbl">Fixtures</span></div>
+    <div class="sum-cell"><span class="sum-val" id="sAnalysed" style="color:var(--subtext)">—</span><span class="sum-lbl">Analysed</span></div>
+    <div class="sum-cell"><span class="sum-val" id="sBet" style="color:var(--green)">—</span><span class="sum-lbl">BET</span></div>
+    <div class="sum-cell"><span class="sum-val" id="sSkip" style="color:var(--red)">—</span><span class="sum-lbl">SKIP</span></div>
+  </div>
+
+  <div class="match-list" id="matchList">
+    <div class="empty-state">
+      <span class="empty-big">⚽</span>
+      Press LOAD FIXTURES then<br>AUTO-SCAN to find BETs automatically
+    </div>
+  </div>
+
+</div>
+
+<!-- TRACKER TAB -->
+<div class="tab-pane" id="tab-tracker">
+  <div class="tracker-stats">
+    <div class="stat-tile"><div class="big col-blue" id="t-total">0</div><div class="small">Total</div></div>
+    <div class="stat-tile"><div class="big col-green" id="t-won">0</div><div class="small">Won</div></div>
+    <div class="stat-tile"><div class="big col-red" id="t-lost">0</div><div class="small">Lost</div></div>
+    <div class="stat-tile"><div class="big col-purple" id="t-rate">—</div><div class="small">Win Rate</div></div>
+    <div class="stat-tile"><div class="big col-green" id="t-pl">€0.00</div><div class="small">P&amp;L</div></div>
+  </div>
+  <div class="pl-bar"><div class="pl-fill pos" id="t-plbar" style="width:0%"></div></div>
+  <div class="saved-list" id="savedList">
+    <div class="tracker-empty">No bets saved yet.<br>Get a BET verdict → enter stake → Save Bet.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const API_BASE = '/.netlify/functions/api';
+
+const LEAGUES = [
+  { code:'PL',  name:'Premier League',  flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', apifId:39  },
+  { code:'BL1', name:'Bundesliga',      flag:'🇩🇪',         apifId:78  },
+  { code:'SA',  name:'Serie A',         flag:'🇮🇹',         apifId:135 },
+  { code:'PD',  name:'La Liga',         flag:'🇪🇸',         apifId:140 },
+  { code:'FL1', name:'Ligue 1',         flag:'🇫🇷',         apifId:61  },
+  { code:'ELC', name:'Championship',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', apifId:40  },
+  { code:'PPL', name:'Primeira Liga',   flag:'🇵🇹',         apifId:94  },
+  { code:'DED', name:'Eredivisie',      flag:'🇳🇱',         apifId:88  },
+  { code:'CL',  name:'Champions Lg',   flag:'🏆',           apifId:2   },
+];
+const LEAGUE_MAP = Object.fromEntries(LEAGUES.map(l => [l.code, l]));
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let allFixtures = [];
+let analysis = {};
+let openId = null;
+let activeLeague = 'ALL';
+let savedBets = JSON.parse(localStorage.getItem('o15v7_bets') || '[]');
+let uiState = {};
+let showBetsOnly = false;
+let scanAborted = false;
+let dataSource = null; // 'apif', 'fdorg', 'mixed'
+
+const today = new Date();
+document.getElementById('todayDate').textContent =
+  today.toLocaleDateString('en-IE', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+
+function saveLocal() { localStorage.setItem('o15v7_bets', JSON.stringify(savedBets)); }
+function getUI(id) {
+  if (!uiState[id]) uiState[id] = { odds:'', stake:'', oddsFormat:'decimal' };
+  return uiState[id];
+}
+
+function getCurrentSeason() {
+  const m = today.getMonth() + 1;
+  return m >= 7 ? today.getFullYear() : today.getFullYear() - 1;
+}
+
+// ── SOURCE INDICATOR ──────────────────────────────────────────────────────────
+function updateSourceIndicator(src) {
+  dataSource = src;
+  const el = document.getElementById('sourceIndicator');
+  if (!src) { el.innerHTML = ''; return; }
+  const labels = { apif:'API-Football', fdorg:'FD.org', mixed:'Mixed' };
+  el.innerHTML = `<span class="source-pill ${src}">${labels[src] || src}</span>`;
+}
+
+// ── LEAGUE BAR ────────────────────────────────────────────────────────────────
+function renderLeagueBar() {
+  const bar = document.getElementById('leagueBar');
+  const all = `<div class="league-chip ${activeLeague==='ALL'?'active':''}" onclick="setLeague('ALL')">🌍 All Leagues</div>`;
+  const chips = LEAGUES.map(l =>
+    `<div class="league-chip ${activeLeague===l.code?'active':''}" onclick="setLeague('${l.code}')">${l.flag} ${l.name}</div>`
+  ).join('');
+  bar.innerHTML = all + chips;
+}
+renderLeagueBar();
+
+function setLeague(code) {
+  activeLeague = code;
+  renderLeagueBar();
+  renderMatchList();
+  updateSummary();
+}
+
+// ── API CALLS WITH FALLBACK ───────────────────────────────────────────────────
+async function apifCall(params) {
+  const qs = new URLSearchParams({ source:'apif', ...params }).toString();
+  const res = await fetch(`${API_BASE}?${qs}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.statusCode === 429 || (data.errors && Object.keys(data.errors).length > 0)) {
+    throw new Error('quota_exceeded');
+  }
+  return data;
+}
+
+async function fdorgCall(path) {
+  const res = await fetch(`${API_BASE}?source=fdorg&path=${encodeURIComponent(path)}`);
+  if (!res.ok) throw new Error(`FDOrg HTTP ${res.status}`);
+  return await res.json();
+}
+
+// ── LOAD FIXTURES ─────────────────────────────────────────────────────────────
+async function loadFixtures() {
+  const btn = document.getElementById('loadBtn');
+  const scanBtn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  scanBtn.disabled = true;
+  setStatus('Loading fixtures…', 'loading');
+  allFixtures = [];
+  analysis = {};
+  openId = null;
+  updateSourceIndicator(null);
+  renderMatchList();
+
+  const todayStr = today.toISOString().split('T')[0];
+  const toFetch = activeLeague === 'ALL' ? LEAGUES : [LEAGUE_MAP[activeLeague]];
+  let usedApif = false, usedFdorg = false;
+
+  for (let i = 0; i < toFetch.length; i++) {
+    const lg = toFetch[i];
+    setStatus(`Fetching ${lg.name}… (${i+1}/${toFetch.length})`, 'loading');
+
+    // Try API-Football first
+    let fetched = false;
+    try {
+      const data = await apifCall({ action:'fixtures', league: lg.code });
+      const matches = data.response || [];
+      if (matches.length > 0) {
+        allFixtures.push(...matches.map(m => ({
+          id: m.fixture.id,
+          source: 'apif',
+          leagueCode: lg.code,
+          utcDate: m.fixture.date,
+          homeTeam: {
+            id: m.teams.home.id,
+            name: m.teams.home.name,
+            shortName: m.teams.home.name,
+            crest: m.teams.home.logo,
+          },
+          awayTeam: {
+            id: m.teams.away.id,
+            name: m.teams.away.name,
+            shortName: m.teams.away.name,
+            crest: m.teams.away.logo,
+          },
+          leagueId: m.league.id,
+        })));
+        usedApif = true;
+        fetched = true;
+      }
+    } catch(e) {
+      console.warn(`API-Football failed for ${lg.code}:`, e.message);
+    }
+
+    // Fallback to football-data.org
+    if (!fetched) {
+      try {
+        const data = await fdorgCall(`/competitions/${lg.code}/matches?dateFrom=${todayStr}&dateTo=${todayStr}&status=SCHEDULED`);
+        const matches = data.matches || [];
+        if (matches.length > 0) {
+          allFixtures.push(...matches.map(m => ({ ...m, leagueCode: lg.code, source: 'fdorg' })));
+          usedFdorg = true;
+        }
+      } catch(e) {
+        console.warn(`FDOrg fallback failed for ${lg.code}:`, e.message);
+      }
+    }
+  }
+
+  btn.disabled = false;
+  if (allFixtures.length === 0) {
+    setStatus('No fixtures found. Check connection.', 'error');
+  } else {
+    setStatus(`${allFixtures.length} fixture${allFixtures.length!==1?'s':''} loaded — tap to analyse or hit AUTO-SCAN`, 'ok');
+    scanBtn.disabled = false;
+  }
+
+  const src = usedApif && usedFdorg ? 'mixed' : usedApif ? 'apif' : usedFdorg ? 'fdorg' : null;
+  updateSourceIndicator(src);
+  renderMatchList();
+  updateSummary();
+}
+
+// ── AUTO SCAN ─────────────────────────────────────────────────────────────────
+async function autoScan() {
+  const fixtures = activeLeague === 'ALL' ? allFixtures : allFixtures.filter(f => f.leagueCode === activeLeague);
+  const unanalysed = fixtures.filter(f => !analysis[f.id] || analysis[f.id].error);
+  if (unanalysed.length === 0) { showToast('All fixtures already analysed'); return; }
+
+  scanAborted = false;
+  const scanBtn = document.getElementById('scanBtn');
+  scanBtn.textContent = '⛔ STOP SCAN';
+  scanBtn.onclick = () => { scanAborted = true; };
+
+  const progress = document.getElementById('scanProgress');
+  progress.classList.add('show');
+
+  let done = 0;
+  const total = unanalysed.length;
+
+  for (const fixture of unanalysed) {
+    if (scanAborted) break;
+    document.getElementById('scanLabel').textContent = `Scanning: ${fixture.homeTeam.shortName || fixture.homeTeam.name} vs ${fixture.awayTeam.shortName || fixture.awayTeam.name}`;
+    document.getElementById('scanCount').textContent = `${done} / ${total}`;
+    document.getElementById('scanFill').style.width = `${(done/total)*100}%`;
+
+    await analyseFixture(fixture.id);
+    done++;
+
+    // Small delay to avoid hammering API
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  document.getElementById('scanCount').textContent = `${done} / ${total}`;
+  document.getElementById('scanFill').style.width = '100%';
+  document.getElementById('scanLabel').textContent = scanAborted ? 'Scan stopped' : 'Scan complete ✓';
+
+  scanBtn.textContent = '⚡ AUTO-SCAN';
+  scanBtn.onclick = autoScan;
+
+  const bets = Object.values(analysis).filter(a => a.verdict === 'BET').length;
+  setStatus(`Scan complete — ${bets} BET${bets!==1?'s':''} found`, 'ok');
+
+  // Auto-switch to BETs only if any found
+  if (bets > 0 && !showBetsOnly) {
+    showBetsOnly = true;
+    updateFilterToggle();
+  }
+
+  renderMatchList();
+  updateSummary();
+}
+
+// ── ANALYSE FIXTURE ───────────────────────────────────────────────────────────
+async function analyseFixture(id) {
+  const m = allFixtures.find(f => f.id === id);
+  if (!m) return;
+
+  analysis[id] = { loading: true };
+  if (openId === id) renderMatchList();
+
+  const homeId = m.homeTeam.id;
+  const awayId = m.awayTeam.id;
+  const leagueId = m.leagueId || null;
+  const season = getCurrentSeason();
+
+  try {
+    let homeGPG, awayGPG, homeGPG_home, awayGPG_away;
+    let homeConceded, awayConceded, homeO15Rate, awayO15Rate;
+    let homeForm, awayForm, h2hMatches, h2hRate;
+    let usedSource = m.source;
+
+    if (m.source === 'apif' && leagueId) {
+      // Use API-Football endpoints
+      const [homeStats, awayStats, h2hData] = await Promise.allSettled([
+        apifCall({ action:'team_stats', teamId:homeId, leagueId }),
+        apifCall({ action:'team_stats', teamId:awayId, leagueId }),
+        apifCall({ action:'h2h', h2h:`${homeId}-${awayId}` }),
+      ]);
+
+      // Parse team stats
+      if (homeStats.status === 'fulfilled') {
+        const hs = homeStats.value.response;
+        homeGPG = parseFloat(hs?.goals?.for?.average?.total) || null;
+        homeGPG_home = parseFloat(hs?.goals?.for?.average?.home) || null;
+        homeConceded = parseFloat(hs?.goals?.against?.average?.total) || null;
+        const played = hs?.fixtures?.played?.total || 0;
+        const scored = hs?.goals?.for?.total?.total || 0;
+        homeO15Rate = played > 0 ? Math.round((scored / played) * 100) : null;
+        // Form from last 5
+        const formStr = hs?.form || '';
+        const last5 = formStr.slice(-5);
+        homeForm = last5.split('').filter(c => c !== 'L').length; // W or D counts as scored approximation
+      }
+
+      if (awayStats.status === 'fulfilled') {
+        const as_ = awayStats.value.response;
+        awayGPG = parseFloat(as_?.goals?.for?.average?.total) || null;
+        awayGPG_away = parseFloat(as_?.goals?.for?.average?.away) || null;
+        awayConceded = parseFloat(as_?.goals?.against?.average?.total) || null;
+        const played = as_?.fixtures?.played?.total || 0;
+        const scored = as_?.goals?.for?.total?.total || 0;
+        awayO15Rate = played > 0 ? Math.round((scored / played) * 100) : null;
+        const formStr = as_?.form || '';
+        const last5 = formStr.slice(-5);
+        awayForm = last5.split('').filter(c => c !== 'L').length;
+      }
+
+      if (h2hData.status === 'fulfilled') {
+        const raw = h2hData.value.response || [];
+        h2hMatches = raw.slice(0, 10).map(hm => ({
+          utcDate: hm.fixture.date,
+          homeTeam: { id: hm.teams.home.id, shortName: hm.teams.home.name, name: hm.teams.home.name },
+          awayTeam: { id: hm.teams.away.id, shortName: hm.teams.away.name, name: hm.teams.away.name },
+          score: { fullTime: { home: hm.goals.home, away: hm.goals.away } },
+        }));
+        h2hRate = calcH2HRate(h2hMatches);
+      }
+
+      // Fallback to fdorg for form if API-F stats incomplete
+      if (homeGPG == null || awayGPG == null) {
+        await enrichFromFDOrg(id, m, homeId, awayId);
+        return;
+      }
+
+    } else {
+      // Use football-data.org
+      await enrichFromFDOrg(id, m, homeId, awayId);
+      return;
+    }
+
+    analysis[id] = {
+      loading: false,
+      homeGPG, awayGPG,
+      homeGPG_home, awayGPG_away,
+      homeConceded, awayConceded,
+      homeO15Rate, awayO15Rate,
+      homeForm, awayForm,
+      h2hRate, h2hMatches: h2hMatches || [],
+      impliedProb: null,
+      source: usedSource,
+    };
+
+  } catch(e) {
+    // Full fallback to fdorg
+    try {
+      await enrichFromFDOrg(id, m, homeId, awayId);
+      return;
+    } catch(e2) {
+      analysis[id] = { loading: false, error: e2.message };
+    }
+  }
+
+  calcVerdict(id);
+  if (openId === id) renderMatchList();
+}
+
+async function enrichFromFDOrg(id, m, homeId, awayId) {
+  const todayStr = today.toISOString().split('T')[0];
+  const [homeRes, awayRes, h2hRes] = await Promise.all([
+    fdorgCall(`/teams/${homeId}/matches?status=FINISHED&limit=20`),
+    fdorgCall(`/teams/${awayId}/matches?status=FINISHED&limit=20`),
+    fdorgCall(`/teams/${homeId}/matches?status=FINISHED&limit=50`),
+  ]);
+
+  const homeMatches = homeRes.matches || [];
+  const awayMatches = awayRes.matches || [];
+  const allHomeMatches = h2hRes.matches || [];
+
+  const homePlayedAtHome = homeMatches.filter(hm => hm.homeTeam?.id === homeId);
+  const awayPlayedAway = awayMatches.filter(hm => hm.awayTeam?.id === awayId);
+
+  const h2hMatches = allHomeMatches.filter(hm =>
+    (hm.homeTeam?.id === homeId && hm.awayTeam?.id === awayId) ||
+    (hm.homeTeam?.id === awayId && hm.awayTeam?.id === homeId)
+  ).slice(0, 10);
+
+  analysis[id] = {
+    loading: false,
+    homeGPG: calcGPG(homeMatches.slice(0,10), homeId),
+    awayGPG: calcGPG(awayMatches.slice(0,10), awayId),
+    homeGPG_home: calcGPG(homePlayedAtHome.slice(0,8), homeId),
+    awayGPG_away: calcGPG(awayPlayedAway.slice(0,8), awayId),
+    homeConceded: calcConceded(homeMatches.slice(0,10), homeId),
+    awayConceded: calcConceded(awayMatches.slice(0,10), awayId),
+    homeO15Rate: calcTeamO15Rate(homeMatches.slice(0,10)),
+    awayO15Rate: calcTeamO15Rate(awayMatches.slice(0,10)),
+    homeForm: calcForm(homeMatches, homeId),
+    awayForm: calcForm(awayMatches, awayId),
+    h2hRate: calcH2HRate(h2hMatches),
+    h2hMatches,
+    impliedProb: null,
+    source: 'fdorg',
+  };
+
+  calcVerdict(id);
+  if (openId === id) renderMatchList();
+}
+
+// ── TOGGLE CARD ───────────────────────────────────────────────────────────────
+function toggleCard(id) {
+  if (openId === id) { openId = null; renderMatchList(); return; }
+  openId = id;
+  if (!analysis[id]) analyseFixture(id);
+  else renderMatchList();
+  setTimeout(() => {
+    const el = document.getElementById('mcard-' + id);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 80);
+}
+
+// ── RENDER MATCH LIST ─────────────────────────────────────────────────────────
+function renderMatchList() {
+  const list = document.getElementById('matchList');
+  let fixtures = activeLeague === 'ALL' ? allFixtures : allFixtures.filter(f => f.leagueCode === activeLeague);
+
+  if (showBetsOnly) {
+    fixtures = fixtures.filter(f => analysis[f.id]?.verdict === 'BET');
+  }
+
+  if (fixtures.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <span class="empty-big">${showBetsOnly ? '✓' : '⚽'}</span>
+      ${allFixtures.length === 0
+        ? 'Press LOAD FIXTURES then AUTO-SCAN'
+        : showBetsOnly ? 'No BET verdicts yet — run AUTO-SCAN' : 'No fixtures for this league today'}
+    </div>`;
+    return;
+  }
+
+  const grouped = {};
+  fixtures.forEach(f => {
+    if (!grouped[f.leagueCode]) grouped[f.leagueCode] = [];
+    grouped[f.leagueCode].push(f);
+  });
+
+  let html = '';
+  for (const [code, matches] of Object.entries(grouped)) {
+    if (activeLeague === 'ALL') {
+      const lg = LEAGUE_MAP[code];
+      html += `<div class="league-section-hdr">${lg?.flag||''} ${lg?.name||code} <span class="lhdr-count">${matches.length}</span></div>`;
+    }
+    matches.forEach(m => { html += buildCard(m); });
+  }
+  list.innerHTML = html;
+  updateSummary();
+}
+
+function buildCard(m) {
+  const id = m.id;
+  const ad = analysis[id];
+  const ui = getUI(id);
+  const ko = new Date(m.utcDate).toLocaleTimeString('en-IE', { hour:'2-digit', minute:'2-digit' });
+  const isOpen = openId === id;
+
+  let vbHtml;
+  if (!ad) vbHtml = `<span class="vbadge pending">Tap</span>`;
+  else if (ad.loading) vbHtml = `<span class="vbadge loading"><span class="spinner"></span></span>`;
+  else if (ad.verdict === 'BET') vbHtml = `<span class="vbadge bet">✓ BET</span>`;
+  else if (ad.verdict === 'SKIP') vbHtml = `<span class="vbadge skip">✗ SKIP</span>`;
+  else vbHtml = `<span class="vbadge pending">—</span>`;
+
+  const cardCls = ['mcard', ad?.verdict==='BET'?'vbet':'', ad?.verdict==='SKIP'?'vskip':'', isOpen?'open':''].filter(Boolean).join(' ');
+  const homeShort = m.homeTeam.shortName || m.homeTeam.name;
+  const awayShort = m.awayTeam.shortName || m.awayTeam.name;
+  const homeCrest = m.homeTeam.crest || '';
+  const awayCrest = m.awayTeam.crest || '';
+  const homeGpgTxt = ad?.homeGPG != null ? `${ad.homeGPG.toFixed(2)} GPG${ad.homeGPG_home!=null?' · '+ad.homeGPG_home.toFixed(2)+' H':''}` : '';
+  const awayGpgTxt = ad?.awayGPG != null ? `${ad.awayGPG.toFixed(2)} GPG${ad.awayGPG_away!=null?' · '+ad.awayGPG_away.toFixed(2)+' A':''}` : '';
+
+  const detail = isOpen ? buildDetail(id, m) : '';
+
+  return `
+  <div class="${cardCls}" id="mcard-${id}">
+    <div class="mcard-top" onclick="toggleCard(${id})">
+      <div class="team-home">
+        ${homeCrest ? `<img class="team-crest" src="${homeCrest}" alt="" onerror="this.style.display='none'">` : ''}
+        <div class="team-name">${homeShort}</div>
+        ${homeGpgTxt ? `<div class="team-gpg">${homeGpgTxt}</div>` : ''}
+      </div>
+      <div class="vs-block">
+        <span class="vs-time">${ko}</span>
+        <span class="vs-sep">VS</span>
+      </div>
+      <div class="team-away">
+        ${awayCrest ? `<img class="team-crest" src="${awayCrest}" alt="" onerror="this.style.display='none'">` : ''}
+        <div class="team-name">${awayShort}</div>
+        ${awayGpgTxt ? `<div class="team-gpg">${awayGpgTxt}</div>` : ''}
+      </div>
+      <div class="verdict-wrap">${vbHtml}</div>
+    </div>
+    ${detail}
+  </div>`;
+}
+
+function buildDetail(id, m) {
+  const ad = analysis[id];
+  const ui = getUI(id);
+  if (!ad) return `<div class="mcard-detail"><div class="err-msg"><span class="spinner"></span>Loading…</div></div>`;
+  if (ad.loading) return `<div class="mcard-detail"><div style="padding:8px 0;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--subtext);"><span class="spinner"></span>Fetching stats &amp; H2H…</div></div>`;
+  if (ad.error) return `<div class="mcard-detail"><div class="err-msg">⚠ ${ad.error}</div></div>`;
+
+  const homeCrest = m.homeTeam.crest || '';
+  const awayCrest = m.awayTeam.crest || '';
+  const checks = buildChecks(ad, ui);
+
+  const statCells = [
+    { lbl:'Home GPG (overall)', val:ad.homeGPG!=null?ad.homeGPG.toFixed(2):'?', cls:ad.homeGPG!=null?(ad.homeGPG>=1.0?'ok':'bad'):'neutral' },
+    { lbl:'Home GPG (at home)', val:ad.homeGPG_home!=null?ad.homeGPG_home.toFixed(2):'?', cls:ad.homeGPG_home!=null?(ad.homeGPG_home>=1.0?'ok':'bad'):'neutral' },
+    { lbl:'Home Conceded/G', val:ad.homeConceded!=null?ad.homeConceded.toFixed(2):'?', cls:ad.homeConceded!=null?(ad.homeConceded>=0.8?'ok':'neutral'):'neutral' },
+    { lbl:'Away GPG (overall)', val:ad.awayGPG!=null?ad.awayGPG.toFixed(2):'?', cls:ad.awayGPG!=null?(ad.awayGPG>=1.0?'ok':'bad'):'neutral' },
+    { lbl:'Away GPG (away)', val:ad.awayGPG_away!=null?ad.awayGPG_away.toFixed(2):'?', cls:ad.awayGPG_away!=null?(ad.awayGPG_away>=1.0?'ok':'bad'):'neutral' },
+    { lbl:'Away Conceded/G', val:ad.awayConceded!=null?ad.awayConceded.toFixed(2):'?', cls:ad.awayConceded!=null?(ad.awayConceded>=0.8?'ok':'neutral'):'neutral' },
+    { lbl:'Home O1.5 Rate', val:ad.homeO15Rate!=null?ad.homeO15Rate+'%':'?', cls:ad.homeO15Rate!=null?(ad.homeO15Rate>=65?'ok':'bad'):'neutral' },
+    { lbl:'Away O1.5 Rate', val:ad.awayO15Rate!=null?ad.awayO15Rate+'%':'?', cls:ad.awayO15Rate!=null?(ad.awayO15Rate>=65?'ok':'bad'):'neutral' },
+    { lbl:'H2H O1.5', val:ad.h2hRate!=null?ad.h2hRate+'%':'?', cls:ad.h2hRate!=null?(ad.h2hRate>=80&&ad.h2hRate<=86?'ok':'bad'):'neutral' },
+  ];
+
+  const statsHtml = `<div class="stats-grid">${statCells.map(c=>`<div class="scell"><div class="scell-lbl">${c.lbl}</div><div class="scell-val ${c.cls}">${c.val}</div></div>`).join('')}</div>
+  <div class="stats-grid" style="margin-top:0">
+    <div class="scell"><div class="scell-lbl">Home Form</div><div class="scell-val ${ad.homeForm!=null?(ad.homeForm>=4?'ok':'bad'):'neutral'}">${ad.homeForm!=null?ad.homeForm+'/5':'?'}</div></div>
+    <div class="scell"><div class="scell-lbl">Away Form</div><div class="scell-val ${ad.awayForm!=null?(ad.awayForm>=4?'ok':'bad'):'neutral'}">${ad.awayForm!=null?ad.awayForm+'/5':'?'}</div></div>
+    <div class="scell"><div class="scell-lbl">Impl Prob</div><div class="scell-val ${ad.impliedProb!=null?(ad.impliedProb<87?'ok':'bad'):'neutral'}">${ad.impliedProb!=null?ad.impliedProb.toFixed(1)+'%':'—'}</div></div>
+  </div>`;
+
+  const critsHtml = `<div class="crits-row">${checks.map(c=>`<span class="crit-chip ${c.pass===null?'wait':c.pass?'pass':'fail'}">${c.label}</span>`).join('')}</div>`;
+
+  let h2hHtml = '';
+  if (ad.h2hMatches?.length > 0) {
+    h2hHtml = `<div class="h2h-section">
+      <div class="h2h-label">Last ${ad.h2hMatches.length} H2H results <span style="color:var(--muted);font-size:0.58rem">(${ad.source==='apif'?'API-Football':'FD.org'})</span></div>
+      ${ad.h2hMatches.map(hm => {
+        const total = (hm.score?.fullTime?.home||0) + (hm.score?.fullTime?.away||0);
+        const over = total >= 2;
+        const d = hm.utcDate ? hm.utcDate.slice(0,10) : '—';
+        return `<div class="h2h-row">
+          <span>${d}</span>
+          <span>${hm.homeTeam?.shortName||hm.homeTeam?.name||'?'} v ${hm.awayTeam?.shortName||hm.awayTeam?.name||'?'}</span>
+          <span class="h2h-score">${hm.score?.fullTime?.home??'?'}–${hm.score?.fullTime?.away??'?'}</span>
+          <span class="${over?'h2h-o':'h2h-u'}">${over?'O':'U'}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const payStr = calcPayout(ui.stake, ui.odds, ui.oddsFormat);
+  const payNote = payStr ? `→ €${payStr} projected return` : '';
+  const canSave = ad.verdict === 'BET';
+  const oddsId = `odds-${id}`;
+
+  return `<div class="mcard-detail">
+    <div class="detail-hdr">
+      <div class="detail-teams">
+        <div class="detail-team-block">
+          ${homeCrest?`<img class="team-crest-lg" src="${homeCrest}" alt="" onerror="this.style.display='none'">` : ''}
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.04em;">${m.homeTeam.shortName||m.homeTeam.name}</div><div class="detail-hdr-label">HOME</div></div>
+        </div>
+        <div class="detail-hdr-label" style="padding:0 8px">VS</div>
+        <div class="detail-team-block right">
+          ${awayCrest?`<img class="team-crest-lg" src="${awayCrest}" alt="" onerror="this.style.display='none'">` : ''}
+          <div style="text-align:right"><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.04em;">${m.awayTeam.shortName||m.awayTeam.name}</div><div class="detail-hdr-label">AWAY</div></div>
+        </div>
+      </div>
+      <button class="refetch-btn" onclick="event.stopPropagation();reAnalyse(${id})" ${ad.loading?'disabled':''}>↻ Re-fetch</button>
+    </div>
+    ${statsHtml}
+    ${critsHtml}
+    ${h2hHtml}
+    <div class="bottom-row" onclick="event.stopPropagation()">
+      <div class="inp-group">
+        <span class="inp-label">Odds Format</span>
+        <select class="inp-field" onchange="uiState[${id}].oddsFormat=this.value;recheckOdds(${id})">
+          <option value="decimal" ${ui.oddsFormat==='decimal'?'selected':''}>Decimal</option>
+          <option value="american" ${ui.oddsFormat==='american'?'selected':''}>American</option>
+        </select>
+      </div>
+      <div class="inp-group">
+        <span class="inp-label">Odds</span>
+        <input class="inp-field" type="number" step="0.01" placeholder="${ui.oddsFormat==='decimal'?'e.g. 1.55':'-180'}"
+          value="${ui.odds}" oninput="uiState[${id}].odds=this.value;recheckOdds(${id})">
+      </div>
+      <div class="inp-group">
+        <span class="inp-label">Stake €</span>
+        <input class="inp-field" type="number" step="0.5" placeholder="10"
+          value="${ui.stake}" oninput="uiState[${id}].stake=this.value;recheckOdds(${id})">
+      </div>
+      <div class="inp-group save-col">
+        <span class="inp-label">&nbsp;</span>
+        <button class="save-btn" onclick="saveBet(${id})" ${canSave?'':'disabled'}>${canSave?'Save Bet →':'SKIP'}</button>
+      </div>
+    </div>
+    <div class="payout-note">${payNote}</div>
+  </div>`;
+}
+
+function buildChecks(ad, ui) {
+  const imp = calcImplied(ui.odds, ui.oddsFormat);
+  return [
+    { label:'Home GPG ≥ 1.0', pass: ad.homeGPG!=null ? ad.homeGPG>=1.0 : null },
+    { label:'Home GPG (home) ≥ 1.0', pass: ad.homeGPG_home!=null ? ad.homeGPG_home>=1.0 : null },
+    { label:'Away GPG ≥ 1.0', pass: ad.awayGPG!=null ? ad.awayGPG>=1.0 : null },
+    { label:'Away GPG (away) ≥ 1.0', pass: ad.awayGPG_away!=null ? ad.awayGPG_away>=1.0 : null },
+    { label:'Home O1.5 ≥ 65%', pass: ad.homeO15Rate!=null ? ad.homeO15Rate>=65 : null },
+    { label:'Away O1.5 ≥ 65%', pass: ad.awayO15Rate!=null ? ad.awayO15Rate>=65 : null },
+    { label:'H2H O1.5 80–86%', pass: ad.h2hRate!=null ? (ad.h2hRate>=80&&ad.h2hRate<=86) : null },
+    { label:'Home scored 4/5', pass: ad.homeForm!=null ? ad.homeForm>=4 : null },
+    { label:'Away scored 4/5', pass: ad.awayForm!=null ? ad.awayForm>=4 : null },
+    { label:'Impl prob < 87%', pass: imp!=null ? imp<87 : null },
+  ];
+}
+
+// ── CALCULATIONS ──────────────────────────────────────────────────────────────
+function calcGPG(matches, teamId) {
+  if (!matches?.length) return null;
+  const total = matches.reduce((s,m) => {
+    const isHome = m.homeTeam?.id === teamId;
+    return s + ((isHome ? m.score?.fullTime?.home : m.score?.fullTime?.away) || 0);
+  }, 0);
+  return total / matches.length;
+}
+function calcConceded(matches, teamId) {
+  if (!matches?.length) return null;
+  const total = matches.reduce((s,m) => {
+    const isHome = m.homeTeam?.id === teamId;
+    return s + ((isHome ? m.score?.fullTime?.away : m.score?.fullTime?.home) || 0);
+  }, 0);
+  return total / matches.length;
+}
+function calcTeamO15Rate(matches) {
+  if (!matches?.length) return null;
+  const over = matches.filter(m => ((m.score?.fullTime?.home||0)+(m.score?.fullTime?.away||0)) >= 2).length;
+  return Math.round((over/matches.length)*100);
+}
+function calcForm(matches, teamId) {
+  if (!matches?.length) return null;
+  return matches.slice(0,5).filter(m => {
+    const isHome = m.homeTeam?.id === teamId;
+    return ((isHome ? m.score?.fullTime?.home : m.score?.fullTime?.away) || 0) > 0;
+  }).length;
+}
+function calcH2HRate(matches) {
+  if (!matches?.length || matches.length < 3) return null;
+  const over = matches.filter(m => ((m.score?.fullTime?.home||0)+(m.score?.fullTime?.away||0)) >= 2).length;
+  return Math.round((over/matches.length)*100);
+}
+function calcImplied(odds, fmt) {
+  const o = parseFloat(odds);
+  if (isNaN(o)) return null;
+  if (fmt === 'decimal') return o <= 1 ? null : (1/o)*100;
+  if (o === 0) return null;
+  return o < 0 ? (Math.abs(o)/(Math.abs(o)+100))*100 : (100/(o+100))*100;
+}
+function calcPayout(stake, odds, fmt) {
+  const s = parseFloat(stake), o = parseFloat(odds);
+  if (isNaN(s)||isNaN(o)||s<=0) return null;
+  if (fmt === 'decimal') return o<=1 ? null : (s*o).toFixed(2);
+  const profit = o>0 ? s*(o/100) : s*(100/Math.abs(o));
+  return (s+profit).toFixed(2);
+}
+
+function calcVerdict(id) {
+  const ad = analysis[id];
+  const ui = getUI(id);
+  if (!ad||ad.loading||ad.error) return;
+  const imp = calcImplied(ui.odds, ui.oddsFormat);
+  ad.impliedProb = imp;
+  const dataReady = ad.homeGPG!=null && ad.awayGPG!=null && ad.homeForm!=null && ad.awayForm!=null;
+  if (!dataReady) { ad.verdict = null; return; }
+  const c1=ad.homeGPG>=1.0, c2=ad.homeGPG_home!=null?ad.homeGPG_home>=1.0:true;
+  const c3=ad.awayGPG>=1.0, c4=ad.awayGPG_away!=null?ad.awayGPG_away>=1.0:true;
+  const c5=ad.h2hRate!=null?(ad.h2hRate>=80&&ad.h2hRate<=86):true; // soft - don't fail if insufficient H2H data
+  const c6=ad.homeForm>=4, c7=ad.awayForm>=4;
+  const c8=ad.homeO15Rate!=null?ad.homeO15Rate>=65:true;
+  const c9=ad.awayO15Rate!=null?ad.awayO15Rate>=65:true;
+  const c10=imp!=null?imp<87:true;
+  ad.verdict = (c1&&c2&&c3&&c4&&c5&&c6&&c7&&c8&&c9&&c10) ? 'BET' : 'SKIP';
+}
+
+function recheckOdds(id) {
+  if (!analysis[id]||analysis[id].loading) return;
+  calcVerdict(id);
+  renderMatchList();
+}
+
+async function reAnalyse(id) {
+  analysis[id] = { loading: true };
+  renderMatchList();
+  await analyseFixture(id);
+  renderMatchList();
+}
+
+// ── FILTER TOGGLE ─────────────────────────────────────────────────────────────
+function toggleFilter() {
+  showBetsOnly = !showBetsOnly;
+  updateFilterToggle();
+  renderMatchList();
+}
+function updateFilterToggle() {
+  const el = document.getElementById('filterToggle');
+  el.textContent = showBetsOnly ? '✓ BETs Only' : 'All Fixtures';
+  el.className = `filter-toggle ${showBetsOnly ? 'bets-only' : 'all'}`;
+}
+
+// ── SAVE BET ──────────────────────────────────────────────────────────────────
+function saveBet(id) {
+  const m = allFixtures.find(f => f.id === id);
+  const ad = analysis[id];
+  const ui = getUI(id);
+  if (!m||!ad||ad.verdict!=='BET') return;
+  const imp = calcImplied(ui.odds, ui.oddsFormat);
+  const pay = calcPayout(ui.stake, ui.odds, ui.oddsFormat);
+  const league = LEAGUE_MAP[m.leagueCode];
+  savedBets.unshift({
+    id: Date.now(),
+    date: today.toLocaleDateString('en-IE'),
+    homeTeam: m.homeTeam.name,
+    awayTeam: m.awayTeam.name,
+    league: league?.name || m.leagueCode,
+    odds: ui.odds,
+    oddsFormat: ui.oddsFormat,
+    impliedProb: imp!=null?imp.toFixed(1):'—',
+    stake: parseFloat(ui.stake)||0,
+    payout: pay?parseFloat(pay):0,
+    result: 'pending',
+  });
+  saveLocal();
+  renderTracker();
+  updateTrackerBadge();
+  showToast(`${m.homeTeam.shortName||m.homeTeam.name} vs ${m.awayTeam.shortName||m.awayTeam.name} saved ✓`);
+}
+
+// ── TRACKER ───────────────────────────────────────────────────────────────────
+function setResult(betId, result) {
+  const b = savedBets.find(b => b.id===betId);
+  if (b) { b.result=result; saveLocal(); renderTracker(); }
+}
+function deleteBet(betId) {
+  if (!confirm('Delete this bet?')) return;
+  savedBets = savedBets.filter(b => b.id!==betId);
+  saveLocal(); renderTracker(); updateTrackerBadge();
+}
+function renderTracker() {
+  const won=savedBets.filter(b=>b.result==='won');
+  const lost=savedBets.filter(b=>b.result==='lost');
+  const settled=savedBets.filter(b=>b.result!=='pending'&&b.result!=='void');
+  const winRate=settled.length>0?((won.length/settled.length)*100).toFixed(0)+'%':'—';
+  let pl=0;
+  won.forEach(b=>pl+=(b.payout-b.stake));
+  lost.forEach(b=>pl-=b.stake);
+  document.getElementById('t-total').textContent=savedBets.filter(b=>b.result!=='void').length;
+  document.getElementById('t-won').textContent=won.length;
+  document.getElementById('t-lost').textContent=lost.length;
+  document.getElementById('t-rate').textContent=winRate;
+  const plEl=document.getElementById('t-pl');
+  plEl.textContent=(pl>=0?'+':'')+'€'+pl.toFixed(2);
+  plEl.className='big '+(pl>=0?'col-green':'col-red');
+  const pct=Math.min(Math.abs(pl)/Math.max(Math.abs(pl),10)*100,100);
+  const bar=document.getElementById('t-plbar');
+  bar.style.width=pct+'%';
+  bar.className='pl-fill '+(pl>=0?'pos':'neg');
+  const list=document.getElementById('savedList');
+  if (savedBets.length===0) {
+    list.innerHTML=`<div class="tracker-empty">No bets saved yet.<br>Get a BET verdict → enter stake → Save Bet.</div>`;
+    return;
+  }
+  list.innerHTML=savedBets.map(b=>{
+    const oddsDisp=b.oddsFormat==='decimal'?b.odds+'x':b.odds;
+    const plStr=b.result==='won'?`+€${(b.payout-b.stake).toFixed(2)}`:b.result==='lost'?`-€${b.stake.toFixed(2)}`:'';
+    return `<div class="sbet ${b.result==='pending'?'pending-result':b.result}">
+      <div>
+        <div class="sbet-teams">${b.homeTeam} vs ${b.awayTeam}</div>
+        <div class="sbet-meta">${b.league} · ${b.date} · Odds ${oddsDisp} · Impl ${b.impliedProb}%${b.stake>0?' · Stake €'+b.stake.toFixed(2):''}</div>
+        ${plStr?`<div class="sbet-pl ${b.result}">${plStr}</div>`:''}
+      </div>
+      <div class="res-btns">
+        ${b.result==='pending'
+          ?`<button class="rb win" onclick="setResult(${b.id},'won')">Won</button>
+            <button class="rb lose" onclick="setResult(${b.id},'lost')">Lost</button>
+            <button class="rb vd" onclick="setResult(${b.id},'void')">Void</button>`
+          :`<span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--subtext);text-transform:uppercase;">${b.result}</span>`}
+        <button class="rb del" onclick="deleteBet(${b.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function updateSummary() {
+  const fixtures = activeLeague==='ALL' ? allFixtures : allFixtures.filter(f=>f.leagueCode===activeLeague);
+  const analysed=fixtures.filter(f=>analysis[f.id]?.verdict).length;
+  const bets=fixtures.filter(f=>analysis[f.id]?.verdict==='BET').length;
+  const skips=fixtures.filter(f=>analysis[f.id]?.verdict==='SKIP').length;
+  document.getElementById('sTotal').textContent=fixtures.length||'—';
+  document.getElementById('sAnalysed').textContent=analysed||(fixtures.length?'0':'—');
+  document.getElementById('sBet').textContent=bets||(analysed?'0':'—');
+  document.getElementById('sSkip').textContent=skips||(analysed?'0':'—');
+}
+
+function updateTrackerBadge() {
+  const pending=savedBets.filter(b=>b.result==='pending').length;
+  const badge=document.getElementById('trackerBadge');
+  badge.textContent=pending;
+  badge.classList.toggle('show',pending>0);
+}
+
+function setStatus(msg, type='') {
+  const el=document.getElementById('statusPill');
+  el.textContent=msg;
+  el.className='status-pill '+type;
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const btn=[...document.querySelectorAll('.tab-btn')].find(b=>b.textContent.toLowerCase().includes(name.slice(0,4)));
+  if (btn) btn.classList.add('active');
+  if (name==='tracker') renderTracker();
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderTracker();
+updateTrackerBadge();
+</script>
+</body>
+</html>
